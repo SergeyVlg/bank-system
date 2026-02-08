@@ -1,11 +1,32 @@
 // bin/macros_demo.rs
 
-use bank_system::tx_chain;
+use bank_system::{tx_chain};
 use bank_system::Storage;
 use bank_system::{Deposit, Transaction, Transfer, Withdraw};
+use my_macros::say_hello;
+
+use my_macros::ToSql;
+
+#[derive(ToSql)]
+struct User {
+    id: i32,
+    name: String,
+    age: i32,
+}
 
 fn main() {
-    let mut storage = Storage::new();
+
+    let user = User {
+        id: 1,
+        name: "Alice".into(),
+        age: 30,
+    };
+    println!("{}", user.to_sql("users"));
+
+    //say_hello!("Привет из процедурного макроса!");
+
+
+    /*let mut storage = Storage::new();
     storage.add_user("Alice".into());
     storage.add_user("Bob".into());
 
@@ -47,5 +68,5 @@ fn main() {
     println!("Итоговые балансы:");
     for (name, balance) in storage.get_all() {
         println!("{} -> {}", name, balance);
-    }
+    }*/
 }

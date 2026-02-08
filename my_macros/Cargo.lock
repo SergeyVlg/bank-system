@@ -3,13 +3,6 @@
 version = 4
 
 [[package]]
-name = "bank-system"
-version = "0.1.0"
-dependencies = [
- "my_macros",
-]
-
-[[package]]
 name = "my_macros"
 version = "0.1.0"
 dependencies = [

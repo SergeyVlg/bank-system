@@ -1,8 +1,9 @@
 pub mod transaction {
     use std::error::Error;
     use std::fmt::{Display, Formatter};
-    use std::ops::Add;
+    use my_macros::Transaction;
     use crate::Storage;
+    use crate::impl_add;
 
     #[derive(Debug)]
     pub enum TxError {
@@ -38,20 +39,14 @@ pub mod transaction {
         }
     }
 
+    #[derive(Transaction)]
     pub struct Deposit {
         pub account: String,
         pub amount: i64,
     }
 
-    impl Transaction for Deposit {
-        fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
-            *storage.accounts.entry(self.account.clone()).or_insert(0) += self.amount;
-            Ok(())
-        }
-    }
-
-
-
+    #[derive(Transaction)]
+    #[transaction("transfer")]
     pub struct Transfer {
         pub from: String,
         pub to: String,
@@ -64,77 +59,43 @@ pub mod transaction {
         }
     }
 
-    impl Transaction for Transfer {
-        fn apply(&self, storage: &mut Storage) -> Result<(), TxError> {
-            let Some(_) = storage.accounts.get(&self.to) else { return Err(TxError::InvalidAccount) };
-            let Some(from_balance) = storage.accounts.get_mut(&self.from) else { return Err(TxError::InvalidAccount) };
-            if *from_balance < self.amount { return Err(TxError::InsufficientFunds); }
-
-            *from_balance -= self.amount;
-            *storage.accounts.get_mut(&self.to).unwrap() += self.amount;
-            Ok(())
-        }
+    impl_add! {
+        (Deposit, Transfer),
+        (Transfer, Deposit),
+        (Deposit, Deposit),
+        (Transfer, Transfer)
     }
 
-    //Deposit + Transfer
-    impl Add<Deposit> for Transfer {
-        type Output = TxCombinator<Transfer, Deposit>;
-
-        fn add(self, rhs: Deposit) -> Self::Output {
-            TxCombinator { t1: self, t2: rhs }
-        }
-    }
-
-    //Transfer + Deposit
-    impl Add<Transfer> for Deposit {
-        type Output = TxCombinator<Deposit, Transfer>;
-
-        fn add(self, rhs: Transfer) -> Self::Output {
-            TxCombinator { t1: self, t2: rhs }
-        }
-    }
-
-    //Deposit + Deposit
-    impl Add<Deposit> for Deposit {
-        type Output = TxCombinator<Deposit, Deposit>;
-
-        fn add(self, rhs: Deposit) -> Self::Output {
-            TxCombinator { t1: self, t2: rhs }
-        }
-    }
-
-    //Transfer + Transfer
-    impl Add<Transfer> for Transfer {
-        type Output = TxCombinator<Transfer, Transfer>;
-
-        fn add(self, rhs: Transfer) -> Self::Output {
-            TxCombinator { t1: self, t2: rhs }
-        }
-    }
-
+    #[derive(Transaction)]
+    #[transaction("withdraw")]
     pub struct Withdraw {
         pub account: String,
         pub amount: i64,
     }
 
-    impl Transaction for Withdraw {
-        fn apply(&self, accounts: &mut Storage) -> Result<(), TxError> {
-            let Some(balance) = accounts.accounts.get_mut(&self.account) else { return Err(TxError::InvalidAccount) };
-            if *balance < self.amount { return Err(TxError::InsufficientFunds); }
-
-            *balance -= self.amount;
-            Ok(())
-        }
+    #[macro_export]
+    macro_rules! tx_chain {
+        ( $first:expr $(, $rest:expr )* $(,)? ) => {{
+            let tx = $first;
+            $(
+                let tx = $crate::TxCombinator { t1: tx, t2: $rest };
+            )*
+            tx
+        }};
     }
 
     #[macro_export]
-    macro_rules! tx_chain {
-    ( $first:expr $(, $rest:expr )* $(,)? ) => {{
-        let tx = $first;
-        $(
-            let tx = $crate::TxCombinator { t1: tx, t2: $rest };
-        )*
-        tx
-    }};
-}
+    macro_rules! impl_add {
+        ( $( ($lhs:ty, $rhs:ty) ),* ) => {
+            $(
+                impl std::ops::Add<$rhs> for $lhs {
+                    type Output = $crate::TxCombinator<$lhs, $rhs>;
+
+                    fn add(self, rhs: $rhs) -> Self::Output {
+                        $crate::TxCombinator { t1: self, t2: rhs }
+                    }
+                }
+            )*
+        };
+    }
 }
