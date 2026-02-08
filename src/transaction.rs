@@ -22,8 +22,8 @@ pub mod transaction {
     impl Error for TxError {}
 
     pub struct TxCombinator<T1: Transaction, T2: Transaction> {
-        t1: T1,
-        t2: T2,
+        pub t1: T1,
+        pub t2: T2,
     }
 
     pub trait Transaction {
@@ -50,13 +50,7 @@ pub mod transaction {
         }
     }
 
-    impl Add<Transfer> for Deposit {
-        type Output = TxCombinator<Deposit, Transfer>;
 
-        fn add(self, rhs: Transfer) -> Self::Output {
-            TxCombinator { t1: self, t2: rhs }
-        }
-    }
 
     pub struct Transfer {
         pub from: String,
@@ -82,10 +76,38 @@ pub mod transaction {
         }
     }
 
+    //Deposit + Transfer
     impl Add<Deposit> for Transfer {
         type Output = TxCombinator<Transfer, Deposit>;
 
         fn add(self, rhs: Deposit) -> Self::Output {
+            TxCombinator { t1: self, t2: rhs }
+        }
+    }
+
+    //Transfer + Deposit
+    impl Add<Transfer> for Deposit {
+        type Output = TxCombinator<Deposit, Transfer>;
+
+        fn add(self, rhs: Transfer) -> Self::Output {
+            TxCombinator { t1: self, t2: rhs }
+        }
+    }
+
+    //Deposit + Deposit
+    impl Add<Deposit> for Deposit {
+        type Output = TxCombinator<Deposit, Deposit>;
+
+        fn add(self, rhs: Deposit) -> Self::Output {
+            TxCombinator { t1: self, t2: rhs }
+        }
+    }
+
+    //Transfer + Transfer
+    impl Add<Transfer> for Transfer {
+        type Output = TxCombinator<Transfer, Transfer>;
+
+        fn add(self, rhs: Transfer) -> Self::Output {
             TxCombinator { t1: self, t2: rhs }
         }
     }
@@ -105,9 +127,14 @@ pub mod transaction {
         }
     }
 
-    impl Withdraw {
-        pub fn new(account: String, amount: i64) -> Withdraw {
-            Withdraw { account, amount}
-        }
-    }
+    #[macro_export]
+    macro_rules! tx_chain {
+    ( $first:expr $(, $rest:expr )* $(,)? ) => {{
+        let tx = $first;
+        $(
+            let tx = $crate::TxCombinator { t1: tx, t2: $rest };
+        )*
+        tx
+    }};
+}
 }
