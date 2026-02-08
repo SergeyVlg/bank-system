@@ -1,6 +1,8 @@
 mod storage;
+mod transaction;
 
 pub use storage::storage::Storage;
+pub use transaction::transaction::{Deposit, Transaction, Transfer, TxCombinator, Withdraw};
 
 pub type Name = String;
 pub type Balance = i64;

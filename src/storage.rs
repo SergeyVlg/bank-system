@@ -8,7 +8,7 @@ pub mod storage {
     use crate::Name;
 
     pub struct Storage {
-        accounts: HashMap<Name, Balance>,
+        pub accounts: HashMap<Name, Balance>,
     }
 
     impl Storage {
