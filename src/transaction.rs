@@ -59,20 +59,14 @@ pub mod transaction {
     }
 
     pub struct Transfer {
-        from: String,
-        to: String,
-        amount: i64,
+        pub from: String,
+        pub to: String,
+        pub amount: i64,
     }
 
     impl Display for Transfer {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
             write!(f, "Транзакция: перевод {} -> {} на {}", self.from, self.to, self.amount)
-        }
-    }
-
-    impl Transfer {
-        pub fn new(from: String, to: String, amount: i64) -> Transfer {
-            Transfer { from, to, amount }
         }
     }
 
@@ -97,8 +91,8 @@ pub mod transaction {
     }
 
     pub struct Withdraw {
-        account: String,
-        amount: i64,
+        pub account: String,
+        pub amount: i64,
     }
 
     impl Transaction for Withdraw {

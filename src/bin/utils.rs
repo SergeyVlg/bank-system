@@ -115,7 +115,7 @@ fn main() {
                     }
                 };
 
-                let withdraw_tx = Withdraw::new(name, amount);
+                let withdraw_tx = Withdraw { account: name, amount };
 
                 match withdraw_tx.apply(&mut storage) {
                     Ok(_) => {
@@ -175,7 +175,7 @@ fn main() {
                     }
                 };
 
-                let tx = Transfer::new(from, to, amount);
+                let tx = Transfer { from, to, amount };
                 match tx.apply(&mut storage) {
                     Ok(_) => {
                         println!("{}", tx);
@@ -207,8 +207,11 @@ fn main() {
                     amount: args[3].parse().unwrap_or(0),
                 };
 
-                let transfer = Transfer::new(args[5].to_string(), args[6].to_string(), args[7].parse().unwrap_or(0));
-                // Здесь мы используем оператор +
+                let from = args[5].to_string();
+                let to = args[6].to_string();
+                let amount: i64 = args[7].parse().unwrap_or(0);
+                let transfer = Transfer { from, to, amount };
+                
                 let combined_tx = deposit + transfer;
 
                 match combined_tx.apply(&mut storage) {
